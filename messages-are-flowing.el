@@ -79,6 +79,13 @@ every newline hard in that region."
 	(set-hard-newline-properties
 	 (- (point) 1) (point))))))
 
+;;;###autoload
+(defun soften-region (start end)
+  "Call this interactively on a region to make all newlines soft in
+that region."
+  (interactive "r")
+  (remove-text-properties start end '(hard nil)))
+
 (defun messages-are-flowing--harden-between-paras  (beg end &rest _ignore)
   "Ensure that paragraphs separated by blank lines are hard.
 
