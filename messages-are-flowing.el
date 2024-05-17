@@ -42,6 +42,10 @@
 ;;
 ;; (with-eval-after-load "message"
 ;;   (add-hook 'message-mode-hook 'messages-are-flowing-use-and-mark-hard-newlines))
+;;
+;; When pasting text, you get hardened newlines between paragraphs. To
+;; also make sure newlines for pasted code and poetry is hardened, use
+;; `harden-region' on such text.
 
 ;;; Code:
 
@@ -57,8 +61,33 @@ The main use of this is to send \"flowed\" email messages, where
 line breaks within paragraphs are adjusted by the recipient's
 device, such that messages remain readable on narrow displays."
   (interactive)
-  (use-hard-newlines)
-  (add-hook 'after-change-functions 'messages-are-flowing--mark-hard-newlines nil t))
+  (use-hard-newlines 3 t)
+  (add-hook 'after-change-functions 'messages-are-flowing--mark-hard-newlines nil t)
+  (add-hook 'after-change-functions 'messages-are-flowing--harden-between-paras nil t))
+
+;;;###autoload
+(defun harden-region (start end)
+  "Call this interactively on regions like code and poetry to make
+every newline hard in that region."
+  (interactive "r")
+  (when use-hard-newlines
+    (save-excursion
+      (goto-char start)
+      (while (< (point) (min (point-max) end))
+	(end-of-line)
+	(forward-char)
+	(set-hard-newline-properties
+	 (- (point) 1) (point))))))
+
+(defun messages-are-flowing--harden-between-paras  (beg end &rest _ignore)
+  "Ensure that paragraphs separated by blank lines are hard.
+
+Otherwise that wouldn't be the case for e.g. pasted text."
+  (save-excursion
+    (goto-char beg)
+    (while (search-forward "\n\n" end t)
+      (set-hard-newline-properties
+       (- (point) 2) (point)))))
 
 (defun messages-are-flowing--mark-hard-newlines (beg end &rest _ignore)
   "Visibly mark hard newlines between BEG and END.
