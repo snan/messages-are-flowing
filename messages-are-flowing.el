@@ -90,16 +90,19 @@ Otherwise that wouldn't be the case for e.g. pasted text."
        (- (point) 2) (point)))))
 
 (defun messages-are-flowing--mark-hard-newlines (beg end &rest _ignore)
-  "Visibly mark hard newlines between BEG and END.
-For each hard newline, add a display property that makes it visible.
-For each soft newline, remove any display property."
+  "Visibly mark hard newlines in paragraphs between BEG and END.
+For each hard newline inside a paragraph, add a display property
+that makes it visible. For each soft newline, or for hard
+newlines between paragraphs, remove any display property."
   ;; Uncomment for debugging:
   ;;(interactive (list (point-min) (point-max)))
   (save-excursion
-    (goto-char beg)
-    (while (search-forward "\n" end t)
+    (goto-char (max (point-min) (- beg 2)))
+    (while (search-forward "\n" (min (+ end 2) (point-max)) t)
       (let ((pos (1- (point))))
-        (if (get-text-property pos 'hard)
+        (if (and (get-text-property pos 'hard)
+		 (not (or (eq 10 (char-after (1+ pos)))
+			  (eq 10 (char-after (1- pos))))))
             ;; Use `copy-sequence', because display property values must not be `eq'!
             (add-text-properties
 	     pos (1+ pos)
